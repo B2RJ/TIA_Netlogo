@@ -21,6 +21,7 @@ turtles-own
   nb-infected         ;; Number of secondary infections caused by an
                       ;; infected person at the end of the tick
   nb-recovered        ;; Number of recovered people at the end of the tick
+  nb-death            ;; Number of dead people at the end of tick
 ]
 
 
@@ -96,6 +97,7 @@ to go
 
   ask turtles with [ infected? ]
     [ infect
+      death
       maybe-recover ]
 
   ask turtles
@@ -145,6 +147,16 @@ to maybe-recover
       set nb-recovered (nb-recovered + 1)
     ]
   ]
+end
+
+to death
+  ;; If people have been infected for more than the recovery-time
+  ;; then there is a chance for recovery
+  if random-float 100 < mortality
+  [ set nb-death (nb-death + 1)
+    die
+  ]
+
 end
 
 to calculate-r0
@@ -269,7 +281,7 @@ initial-people
 initial-people
 50
 400
-100.0
+400.0
 5
 1
 NIL
@@ -293,6 +305,7 @@ true
 PENS
 "Infected" 1.0 0 -2674135 true "" "plot count turtles with [ infected? ]"
 "Not Infected" 1.0 0 -10899396 true "" "plot count turtles with [ not infected? ]"
+"Population tot" 1.0 0 -817084 true "" "plot count turtles"
 
 PLOT
 15
@@ -385,6 +398,32 @@ MONITOR
 R0
 r0
 2
+1
+11
+
+SLIDER
+13
+504
+333
+537
+mortality
+mortality
+0
+10
+1.2
+0.1
+1
+%
+HORIZONTAL
+
+MONITOR
+429
+420
+500
+465
+Population
+count turtles
+17
 1
 11
 
