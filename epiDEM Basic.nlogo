@@ -1,6 +1,8 @@
 globals
 [
   nb-infected-previous  ;; Number of infected people at the previous tick
+  border                ;; The patches representing the yellow border
+  angle                ;; Heading for individuals
   beta-n                ;; The average number of new secondary
                         ;; infections per infected this tick
   gamma                 ;; The average number of new recoveries
@@ -22,6 +24,8 @@ turtles-own
   nb-infected         ;; Number of secondary infections caused by an
                       ;; infected person at the end of the tick
   nb-recovered        ;; Number of recovered people at the end of the tick
+
+  continent            ;; Which continent a person lives one, people on continent 1 are squares, people on continent 2 are circles.
   nb-death            ;; Number of dead people at the end of tick
 ]
 
@@ -32,20 +36,35 @@ turtles-own
 
 to setup
   clear-all
+  setup-globals
   setup-people
   reset-ticks
 end
 
+to setup-globals
+    set border patches with [(pxcor =  0 and abs (pycor) >= 0)]
+    ask border [ set pcolor yellow ]
+end
 
 to setup-people
   create-turtles initial-people
   [
     setxy random-xcor random-ycor
+    ifelse xcor <= 0
+      [ set continent 1 ]
+      [ set continent 2 ]
+
+
     set cured? false
     set infected? false
     set susceptible? true
 
-    set shape "person"
+    ifelse continent = 1
+        [ set shape "square" ]
+        [ set shape "circle" ]
+
+    set size 0.5
+
     set color white
 
     ;; Set the recovery time for each agent to fall on a
@@ -58,14 +77,30 @@ to setup-people
     ]
     if recovery-time < 0 [ set recovery-time 0 ]
 
-    ;; Each individual has a 5% chance of starting out infected.
-    ;; To mimic true KM conditions use "ask one-of turtles" instead.
-    if (random-float 100 < 5)
-    [
-      set infected? true
-      set susceptible? false
-      set infection-length random recovery-time
+
+
+    ifelse TwoContinentInfected
+        [ ;; Each individual has a 5% chance of starting out infected.
+          ;; To mimic true KM conditions use "ask one-of turtles" instead.
+          if (random-float 100 < 5)
+             [
+                set infected? true
+                set susceptible? false
+                set infection-length random recovery-time
+             ]
     ]
+    [if continent = 1
+    [ ;; Each individual has a 5% chance of starting out infected.
+          ;; To mimic true KM conditions use "ask one-of turtles" instead.
+          if (random-float 100 < 5)
+             [
+                set infected? true
+                set susceptible? false
+                set infection-length random recovery-time
+      ]]
+    ]
+
+
     assign-color
   ]
 end
@@ -108,11 +143,64 @@ to go
   tick
 end
 
-
+;; Rajouter le bouton travel tendency
+;; Rajouter le bouton intra-mobility
 ;; People move about at random.
 to move  ;; turtle procedure
-  rt random-float 360
-  fd 1
+
+  if random 100 < (travel-tendency) ;; up to 1% chance of travel
+    [ set xcor (- xcor) ]
+
+  ifelse continent = 1
+  [
+    ifelse xcor > (- 0.5)  ;; and on border patch
+    [
+      set angle random-float 180
+      let new-patch patch-at-heading-and-distance angle (-1)
+      if new-patch != nobody
+      [
+        move-to new-patch
+      ]
+    ]
+    [ ;; if in continent 1 and not on border
+      ifelse xcor < (min-pxcor + 0.5)  ;; at the edge of world
+      [
+        set angle random-float 180
+      ]
+      [
+        set angle random-float 360  ;; inside world
+      ]
+      rt angle
+
+      fd intra-mobility
+    ]
+
+  ]
+  [ ;; in continent 2
+    ifelse xcor < 1  ;; and on border patch
+    [
+      set angle random-float 180
+      let new-patch patch-at-heading-and-distance angle (1)
+      if new-patch != nobody
+      [
+        move-to new-patch
+      ]
+    ]
+    [ ;; if in continent 2 and not on border
+      ifelse xcor > (max-pxcor - 1) ;; at the edge of world
+      [
+        set angle random-float 180
+      ]
+      [
+        set angle random-float 360
+      ]
+      lt angle
+
+
+      fd intra-mobility
+    ]
+
+  ]
 end
 
 to clear-count
@@ -222,6 +310,7 @@ to calculate-r0
 end
 
 
+
 ; Copyright 2011 Uri Wilensky.
 ; See Info tab for full copyright and license.
 @#$#@#$#@
@@ -239,8 +328,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -12
 12
@@ -249,14 +338,14 @@ GRAPHICS-WINDOW
 1
 1
 1
-hours
+jours
 30.0
 
 BUTTON
-231
-164
-314
-197
+918
+476
+1001
+509
 setup
 setup
 NIL
@@ -270,10 +359,10 @@ NIL
 1
 
 BUTTON
-331
-164
-414
-197
+1018
+476
+1101
+509
 go
 go
 T
@@ -287,25 +376,25 @@ NIL
 0
 
 SLIDER
-46
-14
-315
-47
+0
+10
+269
+43
 initial-people
 initial-people
 50
 400
-200.0
+210.0
 5
 1
 NIL
 HORIZONTAL
 
 PLOT
-340
-217
-634
-347
+1115
+142
+1409
+272
 Populations
 hours
 # of people
@@ -319,14 +408,16 @@ true
 PENS
 "Infected" 1.0 0 -2674135 true "" "plot count turtles with [ infected? ]"
 "Not Infected" 1.0 0 -10899396 true "" "plot count turtles with [ not infected? ]"
-"Population tot" 1.0 0 -817084 true "" "plot count turtles"
-"Ré-infected" 1.0 0 -13791810 true "" "plot nb-reinfection"
+"Infected-1 (L)" 1.0 0 -817084 true "" "plot count turtles with [ infected? and continent = 1]"
+"Infected-2 (R)" 1.0 0 -7500403 true "" "plot count turtles with [ infected? and continent = 2]"
+"Population_Tot" 1.0 0 -7858858 true "" "plot count turtles"
+"Reinfected" 1.0 0 -13791810 true "" "plot nb-reinfection"
 
 PLOT
-13
-359
-332
-495
+1115
+278
+1434
+414
 Infection and Recovery Rates
 hours
 rate
@@ -342,15 +433,15 @@ PENS
 "Recovery Rate" 1.0 0 -10899396 true "" "plot (gamma * nb-infected-previous)"
 
 SLIDER
-46
-60
-314
-93
+1
+51
+269
+84
 infection-chance
 infection-chance
 10
 100
-30.0
+90.0
 5
 1
 NIL
@@ -372,10 +463,10 @@ NIL
 HORIZONTAL
 
 PLOT
-13
-217
-331
-345
+1113
+10
+1431
+138
 Cumulative Infected and Recovered
 hours
 % total pop
@@ -406,10 +497,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-425
-404
-504
-449
+648
+479
+727
+524
 R0
 r0
 2
@@ -417,36 +508,51 @@ r0
 11
 
 SLIDER
-11
-556
-331
-589
-mortality
-mortality
 0
-10
-1.2
+94
+172
+127
+travel-tendency
+travel-tendency
+0
+1
+1.0
 0.1
 1
-%
+NIL
 HORIZONTAL
 
-MONITOR
-427
-472
-498
-517
-Population
-count turtles
-17
+SLIDER
+0
+128
+172
+161
+intra-mobility
+intra-mobility
+0
 1
-11
+0.4
+0.1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+0
+240
+193
+273
+TwoContinentInfected
+TwoContinentInfected
+1
+1
+-1000
 
 SLIDER
-46
-113
-218
-146
+0
+165
+172
+198
 reinfection-chance
 reinfection-chance
 0
@@ -456,6 +562,32 @@ reinfection-chance
 1
 NIL
 HORIZONTAL
+
+SLIDER
+3
+203
+175
+236
+mortality
+mortality
+0
+10
+1.2
+0.1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+734
+478
+813
+523
+Population
+count turtles
+0
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
