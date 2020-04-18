@@ -8,6 +8,7 @@ globals
   r0                    ;; The number of secondary infections that arise
                         ;; due to a single infected introduced in a wholly
                         ;; susceptible population
+  nb-reinfection
 ]
 
 turtles-own
@@ -121,14 +122,27 @@ end
 
 ;; Infection can occur to any susceptible person nearby
 to infect  ;; turtle procedure
-   let nearby-uninfected (turtles-on neighbors)
-     with [ not infected? and not cured? ]
+     let nearby-uninfected (turtles-on neighbors)
+     with [ not infected? ]
 
      if nearby-uninfected != nobody
      [ ask nearby-uninfected
-       [ if random-float 100 < infection-chance
-         [ set infected? true
-           set nb-infected (nb-infected + 1)
+       [ ifelse cured?
+         [ if random-float 100 < reinfection-chance
+           [ set infected? false
+             set cured? false
+             set susceptible? true
+             set nb-recovered (nb-recovered - 1)
+             set nb-reinfection (nb-reinfection + 1)
+             set infection-length 0
+             set color blue
+           ]
+         ]
+         [
+           if random-float 100 < infection-chance
+           [ set infected? true
+             set nb-infected (nb-infected + 1)
+           ]
          ]
        ]
      ]
@@ -239,10 +253,10 @@ hours
 30.0
 
 BUTTON
-233
-112
-316
-145
+231
+164
+314
+197
 setup
 setup
 NIL
@@ -256,10 +270,10 @@ NIL
 1
 
 BUTTON
-333
-112
-416
-145
+331
+164
+414
+197
 go
 go
 T
@@ -281,17 +295,17 @@ initial-people
 initial-people
 50
 400
-400.0
+200.0
 5
 1
 NIL
 HORIZONTAL
 
 PLOT
-342
-165
-636
-295
+340
+217
+634
+347
 Populations
 hours
 # of people
@@ -306,12 +320,13 @@ PENS
 "Infected" 1.0 0 -2674135 true "" "plot count turtles with [ infected? ]"
 "Not Infected" 1.0 0 -10899396 true "" "plot count turtles with [ not infected? ]"
 "Population tot" 1.0 0 -817084 true "" "plot count turtles"
+"Ré-infected" 1.0 0 -13791810 true "" "plot nb-reinfection"
 
 PLOT
-15
-307
-334
-443
+13
+359
+332
+495
 Infection and Recovery Rates
 hours
 rate
@@ -357,10 +372,10 @@ NIL
 HORIZONTAL
 
 PLOT
-15
-165
-333
-293
+13
+217
+331
+345
 Cumulative Infected and Recovered
 hours
 % total pop
@@ -391,10 +406,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-427
-352
-506
-397
+425
+404
+504
+449
 R0
 r0
 2
@@ -402,10 +417,10 @@ r0
 11
 
 SLIDER
-13
-504
-333
-537
+11
+556
+331
+589
 mortality
 mortality
 0
@@ -417,15 +432,30 @@ mortality
 HORIZONTAL
 
 MONITOR
-429
-420
-500
-465
+427
+472
+498
+517
 Population
 count turtles
 17
 1
 11
+
+SLIDER
+46
+113
+218
+146
+reinfection-chance
+reinfection-chance
+0
+100
+2.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
