@@ -595,7 +595,7 @@ fatality-rate
 fatality-rate
 0
 10
-0.0
+0.7
 0.1
 1
 NIL
@@ -634,9 +634,27 @@ SWITCH
 502
 active-quarantine
 active-quarantine
-1
+0
 1
 -1000
+
+PLOT
+1119
+456
+1319
+606
+basic reproductive ratio
+rate
+days
+0.0
+100.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"r0" 1.0 0 -2674135 true "" "plot r0"
 
 @#$#@#$#@
 ## WHAT IS IT?
