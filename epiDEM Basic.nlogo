@@ -17,7 +17,7 @@ turtles-own
 [
   infected?           ;; If true, the person is infected
   cured?              ;; If true, the person has lived through an infection.
-                      ;; They cannot be re-infected.
+  can-be-reinfected?  ;; They can be re-infected.
   susceptible?        ;; Tracks whether the person was initially susceptible
   infection-length    ;; How long the person has been infected
   recovery-time       ;; Time (in hours) it takes before the person has a chance to recover from the infection
@@ -58,6 +58,7 @@ to setup-people
     set cured? false
     set infected? false
     set susceptible? true
+    set can-be-reinfected? false
 
     ifelse continent = 1
         [ set shape "square" ]
@@ -206,6 +207,7 @@ end
 to clear-count
   set nb-infected 0
   set nb-recovered 0
+
 end
 
 ;; Infection can occur to any susceptible person nearby
@@ -215,13 +217,13 @@ to infect  ;; turtle procedure
 
      if nearby-uninfected != nobody
      [ ask nearby-uninfected
-       [ ifelse cured?
+       [ ifelse cured? and ActivateReinfection
          [ if random-float 100 < reinfection-chance
            [ set infected? false
              set cured? false
              set susceptible? true
+             set can-be-reinfected? true
              set nb-recovered (nb-recovered - 1)
-             set nb-reinfection (nb-reinfection + 1)
              set infection-length 0
              set color blue
            ]
@@ -230,6 +232,10 @@ to infect  ;; turtle procedure
            if random-float 100 < infection-chance
            [ set infected? true
              set nb-infected (nb-infected + 1)
+             if can-be-reinfected?
+             [
+                set nb-reinfection (nb-reinfection + 1)
+             ]
            ]
          ]
        ]
@@ -258,7 +264,6 @@ to death
   [ set nb-death (nb-death + 1)
     die
   ]
-
 end
 
 to calculate-r0
@@ -315,13 +320,13 @@ end
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-644
-13
-1102
-472
+577
+10
+1032
+466
 -1
 -1
-18.0
+17.9
 1
 10
 1
@@ -342,10 +347,10 @@ jours
 30.0
 
 BUTTON
-918
-476
-1001
-509
+851
+473
+934
+506
 setup
 setup
 NIL
@@ -359,10 +364,10 @@ NIL
 1
 
 BUTTON
-1018
-476
-1101
-509
+951
+473
+1034
+506
 go
 go
 T
@@ -391,9 +396,9 @@ NIL
 HORIZONTAL
 
 PLOT
-1115
+1082
 142
-1409
+1400
 272
 Populations
 hours
@@ -411,12 +416,11 @@ PENS
 "Infected-1 (L)" 1.0 0 -817084 true "" "plot count turtles with [ infected? and continent = 1]"
 "Infected-2 (R)" 1.0 0 -7500403 true "" "plot count turtles with [ infected? and continent = 2]"
 "Population_Tot" 1.0 0 -7858858 true "" "plot count turtles"
-"Reinfected" 1.0 0 -13791810 true "" "plot nb-reinfection"
 
 PLOT
-1115
+1082
 278
-1434
+1401
 414
 Infection and Recovery Rates
 hours
@@ -441,31 +445,31 @@ infection-chance
 infection-chance
 10
 100
-90.0
-5
-1
-NIL
-HORIZONTAL
-
-SLIDER
-332
-15
-599
-48
-recovery-chance
-recovery-chance
-10
-100
 60.0
 5
 1
 NIL
 HORIZONTAL
 
-PLOT
-1113
+SLIDER
+276
 10
-1431
+543
+43
+recovery-chance
+recovery-chance
+10
+100
+50.0
+5
+1
+NIL
+HORIZONTAL
+
+PLOT
+1080
+10
+1398
 138
 Cumulative Infected and Recovered
 hours
@@ -482,10 +486,10 @@ PENS
 "% recovered" 1.0 0 -10899396 true "" "plot ((count turtles with [ cured? ] / initial-people) * 100)"
 
 SLIDER
-331
-57
-600
-90
+275
+52
+544
+85
 average-recovery-time
 average-recovery-time
 50
@@ -497,10 +501,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-648
-479
-727
-524
+581
+476
+660
+521
 R0
 r0
 2
@@ -557,37 +561,59 @@ reinfection-chance
 reinfection-chance
 0
 100
-2.0
+1.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-3
+0
 203
-175
+172
 236
 mortality
 mortality
 0
 10
-1.2
+1.0
 0.1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-734
-478
-813
-523
+667
+475
+746
+520
 Population
 count turtles
 0
 1
 11
+
+MONITOR
+753
+475
+835
+520
+Réinfection
+nb-reinfection
+17
+1
+11
+
+SWITCH
+0
+278
+193
+311
+ActivateReinfection
+ActivateReinfection
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
