@@ -133,7 +133,7 @@ to go
 
   ask turtles
     [ move
-      if activate-quarantine
+      if active-quarantine
         [ quarantine ]
       clear-count ]
 
@@ -242,7 +242,7 @@ to infect  ;; turtle procedure
      if nearby-uninfected != nobody
      [ ask nearby-uninfected
        [ ifelse cured?
-         [ if random-float 100 < reinfection-chance and activate-reinfection
+         [ if random-float 100 < reinfection-chance and test
            [ set infected? false
              set cured? false
              set susceptible? true
@@ -638,8 +638,8 @@ SWITCH
 231
 369
 264
-activate-quarantine
-activate-quarantine
+active-quarantine
+active-quarantine
 0
 1
 -1000
@@ -658,7 +658,7 @@ nb-reinfection
 SWITCH
 176
 196
-369
+354
 229
 activate-reinfection
 activate-reinfection
