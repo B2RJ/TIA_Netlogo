@@ -242,7 +242,7 @@ end
 
 ;; Infection can occur to any susceptible person nearby
 to infect  ;; turtle procedure
-  if notquarantine?
+  if nquarantine?
   [
     let nearby-uninfected (turtles-on neighbors)
      with [ not infected? ]
@@ -585,7 +585,7 @@ SWITCH
 161
 TwoContinentInfected
 TwoContinentInfected
-1
+0
 1
 -1000
 
@@ -639,7 +639,7 @@ quarantine-rate
 quarantine-rate
 0
 1
-0.52
+0.11
 0.01
 1
 NIL
@@ -652,7 +652,7 @@ SWITCH
 265
 activate-quarantine
 activate-quarantine
-0
+1
 1
 -1000
 
@@ -685,7 +685,7 @@ SWITCH
 127
 travel?
 travel?
-1
+0
 1
 -1000
 
