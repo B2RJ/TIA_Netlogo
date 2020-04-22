@@ -53,6 +53,9 @@ to setup-people
   create-turtles initial-people
   [
     setxy random-xcor random-ycor
+    while [xcor >= -1 and xcor <= 1]
+    [ setxy random-xcor random-ycor ]
+
     ifelse xcor <= 0
       [ set continent 1 ]
       [ set continent 2 ]
@@ -159,7 +162,6 @@ to move  ;; turtle procedure
      if susceptible? and quarantine-length > 7
     [ set quarantine? false
       set color white
-      set quarantine-length 0
       ask (patch-at 0 0) [ set pcolor black ]
       ask border [ set pcolor yellow ]           ;; patches on the border stay yellow
     ]
@@ -173,7 +175,7 @@ to move  ;; turtle procedure
 
     ifelse continent = 1
     [
-      ifelse xcor > (- 0.5)  ;; and on border patch
+      ifelse xcor > (- 2)  ;; and on border patch
       [
         set angle random-float 180
         let new-patch patch-at-heading-and-distance angle (-1)
@@ -197,7 +199,7 @@ to move  ;; turtle procedure
 
     ]
     [ ;; in continent 2
-      ifelse xcor < 1  ;; and on border patch
+      ifelse xcor < 2  ;; and on border patch
       [
         set angle random-float 180
         let new-patch patch-at-heading-and-distance angle (1)
@@ -233,6 +235,7 @@ to quarantine
   if not quarantine? and susceptible? and random-float 1 < quarantine-rate
   [  set quarantine? true
      move-to patch-here ;; move to center of patch
+     set quarantine-length 0
      ask (patch-at 0 0) [ set pcolor gray - 3 ]
   ]
 end
@@ -574,7 +577,7 @@ SWITCH
 161
 TwoContinentInfected
 TwoContinentInfected
-0
+1
 1
 -1000
 
@@ -587,7 +590,7 @@ reinfection-chance
 reinfection-chance
 0
 100
-86.0
+30.0
 1
 1
 NIL
@@ -602,7 +605,7 @@ fatality-rate
 fatality-rate
 0
 10
-8.6
+1.4
 0.1
 1
 NIL
@@ -628,7 +631,7 @@ quarantine-rate
 quarantine-rate
 0
 1
-0.1
+0.2
 0.01
 1
 NIL
@@ -641,7 +644,7 @@ SWITCH
 265
 activate-quarantine
 activate-quarantine
-1
+0
 1
 -1000
 
@@ -663,7 +666,7 @@ SWITCH
 229
 activate-reinfection
 activate-reinfection
-0
+1
 1
 -1000
 
@@ -674,7 +677,7 @@ SWITCH
 127
 travel?
 travel?
-0
+1
 1
 -1000
 

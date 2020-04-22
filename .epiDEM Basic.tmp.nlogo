@@ -2,7 +2,7 @@ globals
 [
   nb-infected-previous  ;; Number of infected people at the previous tick
   border                ;; The patches representing the yellow border
-  angle                ;; Heading for individuals
+  angle                 ;; Heading for individuals
   beta-n                ;; The average number of new secondary
                         ;; infections per infected this tick
   gamma                 ;; The average number of new recoveries
@@ -53,6 +53,9 @@ to setup-people
   create-turtles initial-people
   [
     setxy random-xcor random-ycor
+    while [xcor >= -1 and xcor <= 1]
+    [ setxy random-xcor random-ycor ]
+
     ifelse xcor <= 0
       [ set continent 1 ]
       [ set continent 2 ]
@@ -133,7 +136,7 @@ to go
 
   ask turtles
     [ move
-      if active-quarantine
+      if activate-quarantine
         [ quarantine ]
       clear-count ]
 
@@ -159,14 +162,16 @@ to move  ;; turtle procedure
      if susceptible? and quarantine-length > 7
     [ set quarantine? false
       set color white
-      set quarantine-length 0
       ask (patch-at 0 0) [ set pcolor black ]
       ask border [ set pcolor yellow ]           ;; patches on the border stay yellow
     ]
   ]
   [
-    if random 100 < (travel-tendency) ;; up to 1% chance of travel
-    [ set xcor (- xcor) ]
+    if travel?
+    [
+      if random 100 < (travel-tendency) ;; up to 1% chance of travel
+      [ set xcor (- xcor) ]
+    ]
 
     ifelse continent = 1
     [
@@ -180,7 +185,7 @@ to move  ;; turtle procedure
         ]
       ]
       [ ;; if in continent 1 and not on border
-        ifelse xcor < (min-pxcor + 0.5)  ;; at the edge of world
+        ifelse xcor < (min-pxcor/ + 0.5)  ;; at the edge of world
         [
           set angle random-float 180
         ]
@@ -230,6 +235,7 @@ to quarantine
   if not quarantine? and susceptible? and random-float 1 < quarantine-rate
   [  set quarantine? true
      move-to patch-here ;; move to center of patch
+     set quarantine-length 0
      ask (patch-at 0 0) [ set pcolor gray - 3 ]
   ]
 end
@@ -242,7 +248,7 @@ to infect  ;; turtle procedure
      if nearby-uninfected != nobody
      [ ask nearby-uninfected
        [ ifelse cured?
-         [ if random-float 100 < reinfection-chance and test
+         [ if random-float 100 < reinfection-chance and activate-reinfection
            [ set infected? false
              set cured? false
              set susceptible? true
@@ -372,10 +378,10 @@ jours
 30.0
 
 BUTTON
-861
-473
-944
-506
+173
+371
+256
+404
 setup
 setup
 NIL
@@ -389,10 +395,10 @@ NIL
 1
 
 BUTTON
-951
-473
-1034
-506
+263
+371
+346
+404
 go
 go
 T
@@ -414,18 +420,18 @@ initial-people
 initial-people
 50
 400
-210.0
+400.0
 5
 1
 NIL
 HORIZONTAL
 
 PLOT
-1082
-142
-1400
-272
-Populations
+1080
+269
+1398
+399
+Populations R
 hours
 # of people
 0.0
@@ -436,17 +442,15 @@ true
 true
 "" ""
 PENS
-"Infected" 1.0 0 -2674135 true "" "plot count turtles with [ infected? ]"
-"Not Infected" 1.0 0 -10899396 true "" "plot count turtles with [ not infected? ]"
-"Infected-1 (L)" 1.0 0 -817084 true "" "plot count turtles with [ infected? and continent = 1]"
-"Infected-2 (R)" 1.0 0 -7500403 true "" "plot count turtles with [ infected? and continent = 2]"
-"Population_Tot" 1.0 0 -7858858 true "" "plot count turtles"
+"Infected_R" 1.0 0 -5298144 true "" "plot count turtles with [ infected? and continent = 2]"
+"Not_Infected_R" 1.0 0 -14439633 true "" "plot count turtles with [ not infected? and continent = 2]"
+"Population_Tot_R" 1.0 0 -7500403 true "" "plot count turtles with [ continent = 2]"
 
 PLOT
-1082
-278
-1401
-414
+1080
+398
+1398
+520
 Infection and Recovery Rates
 hours
 rate
@@ -470,7 +474,7 @@ infection-chance
 infection-chance
 10
 100
-50.0
+100.0
 5
 1
 NIL
@@ -485,7 +489,7 @@ recovery-chance
 recovery-chance
 10
 100
-50.0
+10.0
 5
 1
 NIL
@@ -519,7 +523,7 @@ average-recovery-time
 average-recovery-time
 50
 300
-220.0
+300.0
 10
 1
 NIL
@@ -545,7 +549,7 @@ travel-tendency
 travel-tendency
 0
 1
-1.0
+0.8
 0.1
 1
 NIL
@@ -560,17 +564,17 @@ intra-mobility
 intra-mobility
 0
 1
-0.4
+0.8
 0.1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-176
-129
-369
-162
+175
+128
+368
+161
 TwoContinentInfected
 TwoContinentInfected
 1
@@ -586,7 +590,7 @@ reinfection-chance
 reinfection-chance
 0
 100
-1.0
+30.0
 1
 1
 NIL
@@ -601,17 +605,17 @@ fatality-rate
 fatality-rate
 0
 10
-0.0
+1.4
 0.1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-663
-473
-742
-518
+752
+474
+831
+519
 Population
 count turtles
 0
@@ -627,28 +631,28 @@ quarantine-rate
 quarantine-rate
 0
 1
-0.1
+0.2
 0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-176
-231
-369
-264
-active-quarantine
-active-quarantine
+174
+232
+367
+265
+activate-quarantine
+activate-quarantine
 0
 1
 -1000
 
 MONITOR
-749
-473
-852
-518
+931
+474
+1030
+519
 Réinfection
 nb-reinfection
 17
@@ -656,15 +660,68 @@ nb-reinfection
 11
 
 SWITCH
-176
+174
 196
-354
+367
 229
 activate-reinfection
 activate-reinfection
-0
+1
 1
 -1000
+
+SWITCH
+175
+94
+368
+127
+travel?
+travel?
+1
+1
+-1000
+
+MONITOR
+659
+474
+748
+519
+Population L
+count turtles with [continent = 1]
+17
+1
+11
+
+MONITOR
+836
+474
+926
+519
+Population R
+count turtles with [continent = 2]
+17
+1
+11
+
+PLOT
+1080
+138
+1398
+269
+Population L
+NIL
+# of people
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"Infected_L" 1.0 0 -5298144 true "" "plot count turtles with [ infected? and continent = 1]"
+"Not_infected_L" 1.0 0 -14439633 true "" "plot count turtles with [ not infected? and continent = 1]"
+"Population_Tot_L" 1.0 0 -7500403 true "" "plot count turtles with [ continent = 1]"
 
 @#$#@#$#@
 ## WHAT IS IT?
