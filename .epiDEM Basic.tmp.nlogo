@@ -175,7 +175,7 @@ to move  ;; turtle procedure
 
     ifelse continent = 1
     [
-      ifelse xcor > (- 0.5)  ;; and on border patch
+      ifelse xcor > (- 2)  ;; and on border patch
       [
         set angle random-float 180
         let new-patch patch-at-heading-and-distance angle (-1)
@@ -185,7 +185,7 @@ to move  ;; turtle procedure
         ]
       ]
       [ ;; if in continent 1 and not on border
-        ifelse xcor < (min-pxcor/ + 0.5)  ;; at the edge of world
+        ifelse xcor < (min-pxcor + 0.5)  ;; at the edge of world
         [
           set angle random-float 180
         ]
@@ -199,7 +199,7 @@ to move  ;; turtle procedure
 
     ]
     [ ;; in continent 2
-      ifelse xcor < 1  ;; and on border patch
+      ifelse xcor < 2  ;; and on border patch
       [
         set angle random-float 180
         let new-patch patch-at-heading-and-distance angle (1)
@@ -242,7 +242,9 @@ end
 
 ;; Infection can occur to any susceptible person nearby
 to infect  ;; turtle procedure
-     let nearby-uninfected (turtles-on neighbors)
+  if notquarantine?
+  [
+    let nearby-uninfected (turtles-on neighbors)
      with [ not infected? ]
 
      if nearby-uninfected != nobody
@@ -270,6 +272,7 @@ to infect  ;; turtle procedure
          ]
        ]
      ]
+  ]
 end
 
 to maybe-recover
@@ -313,8 +316,13 @@ to calculate-r0
     count turtles with [ infected? ] -
     count turtles with [ cured? ]
 
-  ;; Initial number of susceptibles:
-  let s0 count turtles with [ susceptible? ]
+  let s0 0;
+  ifelse TwoContinentInfected
+  [
+    ;; Initial number of susceptibles:
+    set s0 count turtles with [ susceptible? and continent = 1 ]
+  ]
+  [ set s0 count turtles with [ susceptible? ] ]
 
   ifelse nb-infected-previous < 10
   [ set beta-n 0 ]
@@ -631,7 +639,7 @@ quarantine-rate
 quarantine-rate
 0
 1
-0.2
+0.52
 0.01
 1
 NIL
