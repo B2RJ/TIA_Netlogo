@@ -428,7 +428,7 @@ initial-people
 initial-people
 50
 400
-400.0
+135.0
 5
 1
 NIL
@@ -482,7 +482,7 @@ infection-chance
 infection-chance
 10
 100
-100.0
+25.0
 5
 1
 NIL
@@ -598,7 +598,7 @@ reinfection-chance
 reinfection-chance
 0
 100
-30.0
+71.0
 1
 1
 NIL
@@ -661,7 +661,7 @@ MONITOR
 474
 1030
 519
-Réinfection
+Réinfections
 nb-reinfection
 17
 1
@@ -674,7 +674,7 @@ SWITCH
 229
 activate-reinfection
 activate-reinfection
-1
+0
 1
 -1000
 
