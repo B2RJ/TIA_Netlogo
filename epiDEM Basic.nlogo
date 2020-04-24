@@ -477,7 +477,7 @@ PLOT
 269
 1398
 399
-Populations R
+Population R
 hours
 # of people
 0.0
@@ -798,6 +798,24 @@ worsening-rate
 1
 %
 HORIZONTAL
+
+PLOT
+287
+431
+487
+581
+R0
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot r0"
 
 @#$#@#$#@
 ## WHAT IS IT?
