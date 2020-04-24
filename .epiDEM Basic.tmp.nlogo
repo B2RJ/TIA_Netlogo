@@ -15,12 +15,15 @@ globals
 
 turtles-own
 [
+  incubation?         ;; If true, the person is exposed
   infected?           ;; If true, the person is infected
   cured?              ;; If true, the person has lived through an infection.
   can-be-reinfected?  ;; They can be re-infected.
                       ;; They cannot be re-infected.
+  isFirstTime?        ;;
   quarantine?         ;; If true, the person is in quarantine
   susceptible?        ;; Tracks whether the person was initially susceptible
+  incubation-length   ;; How long the persone has been infected
   infection-length    ;; How long the person has been infected
   quarantine-length   ;; How long the person has been in quarantine
   recovery-time       ;; Time (in hours) it takes before the person has a chance to recover from the infection
@@ -63,9 +66,11 @@ to setup-people
 
     set cured? false
     set infected? false
+    set incubation? false
     set quarantine? false
     set susceptible? true
     set can-be-reinfected? false
+    set isFirstTime? true
 
     ifelse continent = 1
         [ set shape "square" ]
@@ -122,6 +127,8 @@ to assign-color  ;; turtle procedure
     [ set color red ]
   if cured?
     [ set color green ]
+  if incubation?
+    [ set color orange ]
 end
 
 
@@ -136,14 +143,25 @@ to go
 
   ask turtles
     [ move
-      if activate-quarantine
-        [ quarantine ]
-      clear-count ]
+      clear-count
+    ]
+
+  ask turtles with [ incubation? ]
+    [
+      incubation
+      infect
+    ]
 
   ask turtles with [ infected? ]
-    [ infect
+    [
+      if activate-quarantine-left or activate-quarantine-right
+        [ quarantine ]
+      infect
       death
       maybe-recover ]
+
+  ask turtles with [ cured? ]
+    [ loss-of-immunity ]
 
   ask turtles
     [ assign-color
@@ -160,14 +178,14 @@ to move  ;; turtle procedure
   ifelse quarantine?
   [  set quarantine-length quarantine-length + 1
      if susceptible? and quarantine-length > 7
-    [ set quarantine? false
-      set color white
-      ask (patch-at 0 0) [ set pcolor black ]
-      ask border [ set pcolor yellow ]           ;; patches on the border stay yellow
-    ]
+     [ set quarantine? false
+       set color white
+       ask (patch-at 0 0) [ set pcolor black ]
+       ask border [ set pcolor yellow ]           ;; patches on the border stay yellow
+     ]
   ]
   [
-    if travel?
+    if activate-travel
     [
       if random 100 < (travel-tendency) ;; up to 1% chance of travel
       [ set xcor (- xcor) ]
@@ -194,7 +212,7 @@ to move  ;; turtle procedure
         ]
         rt angle
 
-        fd intra-mobility
+        fd intra-mobility-left
       ]
 
     ]
@@ -219,7 +237,7 @@ to move  ;; turtle procedure
         lt angle
 
 
-        fd intra-mobility
+        fd intra-mobility-right
       ]
     ]
   ]
@@ -232,37 +250,50 @@ to clear-count
 end
 
 to quarantine
-  if not quarantine? and susceptible? and random-float 1 < quarantine-rate
-  [  set quarantine? true
-     move-to patch-here ;; move to center of patch
-     set quarantine-length 0
-     ask (patch-at 0 0) [ set pcolor gray - 3 ]
+  ifelse continent = 1
+  [
+    if not quarantine? and random-float 1 < quarantine-rate-left and activate-quarantine-left
+    [ set quarantine? true
+      move-to patch-here ;; move to center of patch
+      set quarantine-length 0
+      ask (patch-at 0 0) [ set pcolor gray - 3 ]
+    ]
+  ]
+  [
+    if not quarantine? and random-float 1 < quarantine-rate-right and activate-quarantine-right
+    [ set quarantine? true
+      move-to patch-here ;; move to center of patch
+      set quarantine-length 0
+      ask (patch-at 0 0) [ set pcolor gray - 3 ]
+    ]
+  ]
+
+end
+
+to incubation
+  ifelse incubation-length <= incubation-rate
+  [  set incubation-length incubation-length + 1]
+  [  set incubation-length 0
+     set incubation? false
+     ifelse random-float 100 < worsening-rate
+     [ set infected? true ]
+     [ set cured? true ]
   ]
 end
 
 ;; Infection can occur to any susceptible person nearby
 to infect  ;; turtle procedure
-  if nquarantine?
+  if not quarantine?
   [
     let nearby-uninfected (turtles-on neighbors)
      with [ not infected? ]
 
      if nearby-uninfected != nobody
      [ ask nearby-uninfected
-       [ ifelse cured?
-         [ if random-float 100 < reinfection-chance and activate-reinfection
-           [ set infected? false
-             set cured? false
-             set susceptible? true
-             set can-be-reinfected? true
-             set nb-recovered (nb-recovered - 1)
-             set infection-length 0
-             set color blue
-           ]
-         ]
+       [ if not cured?
          [
            if random-float 100 < infection-chance
-           [ set infected? true
+           [ set incubation? true
              set nb-infected (nb-infected + 1)
              if can-be-reinfected?
              [
@@ -273,6 +304,25 @@ to infect  ;; turtle procedure
        ]
      ]
   ]
+end
+
+;; si la perte immunitaire est possible, on lance 1 fois cette fonction
+;; il aura reinfection-chance % d'être à nouveau susceptible sinon on est immunisé jusqu'à la fin de la simulation
+to loss-of-immunity
+  if activate-reinfection and isFirstTime?
+  [
+    if random-float 100 < reinfection-chance
+    [ set infected? false
+      set cured? false
+      set susceptible? true
+      set can-be-reinfected? true
+      set nb-recovered (nb-recovered - 1)
+      set infection-length 0
+      set color blue
+    ]
+    set isFirstTime? false
+  ]
+
 end
 
 to maybe-recover
@@ -359,9 +409,9 @@ end
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-577
+583
 10
-1032
+1038
 466
 -1
 -1
@@ -386,10 +436,10 @@ jours
 30.0
 
 BUTTON
-173
-371
-256
-404
+691
+558
+799
+609
 setup
 setup
 NIL
@@ -403,10 +453,10 @@ NIL
 1
 
 BUTTON
-263
-371
-346
-404
+806
+558
+914
+609
 go
 go
 T
@@ -420,15 +470,15 @@ NIL
 0
 
 SLIDER
-0
-10
-269
-43
+11
+81
+280
+114
 initial-people
 initial-people
 50
 400
-400.0
+200.0
 5
 1
 NIL
@@ -439,7 +489,7 @@ PLOT
 269
 1398
 399
-Populations R
+Population Right
 hours
 # of people
 0.0
@@ -474,25 +524,25 @@ PENS
 "Recovery Rate" 1.0 0 -10899396 true "" "plot (gamma * nb-infected-previous)"
 
 SLIDER
-1
-51
-269
-84
+12
+122
+280
+155
 infection-chance
 infection-chance
 10
 100
-100.0
+25.0
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
-276
-10
-543
-43
+287
+81
+554
+114
 recovery-chance
 recovery-chance
 10
@@ -523,10 +573,10 @@ PENS
 "% recovered" 1.0 0 -10899396 true "" "plot ((count turtles with [ cured? ] / initial-people) * 100)"
 
 SLIDER
-275
-52
-544
-85
+286
+123
+555
+156
 average-recovery-time
 average-recovery-time
 50
@@ -538,9 +588,9 @@ NIL
 HORIZONTAL
 
 MONITOR
-577
+583
 474
-656
+662
 519
 R0
 r0
@@ -549,10 +599,10 @@ r0
 11
 
 SLIDER
-0
-94
-172
-127
+13
+315
+279
+348
 travel-tendency
 travel-tendency
 0
@@ -564,25 +614,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-0
-128
-172
-161
-intra-mobility
-intra-mobility
+13
+276
+279
+309
+intra-mobility-left
+intra-mobility-left
 0
 1
-0.8
+0.7
 0.1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-175
-128
-368
-161
+13
+354
+279
+387
 TwoContinentInfected
 TwoContinentInfected
 0
@@ -590,24 +640,24 @@ TwoContinentInfected
 -1000
 
 SLIDER
-0
-196
-172
-229
+145
+475
+411
+508
 reinfection-chance
 reinfection-chance
 0
 100
-30.0
+33.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
-0
+287
 162
-172
+555
 195
 fatality-rate
 fatality-rate
@@ -620,9 +670,9 @@ NIL
 HORIZONTAL
 
 MONITOR
-752
+758
 474
-831
+837
 519
 Population
 count turtles
@@ -631,12 +681,12 @@ count turtles
 11
 
 SLIDER
-0
-231
-172
-264
-quarantine-rate
-quarantine-rate
+17
+547
+280
+580
+quarantine-rate-left
+quarantine-rate-left
 0
 1
 0.11
@@ -646,53 +696,53 @@ NIL
 HORIZONTAL
 
 SWITCH
-174
-232
-367
-265
-activate-quarantine
-activate-quarantine
+17
+511
+280
+544
+activate-quarantine-left
+activate-quarantine-left
 1
 1
 -1000
 
 MONITOR
-931
+937
 474
-1030
+1036
 519
-Réinfection
+Réinfections
 nb-reinfection
 17
 1
 11
 
 SWITCH
-174
-196
-367
-229
+285
+433
+553
+466
 activate-reinfection
 activate-reinfection
-1
+0
 1
 -1000
 
 SWITCH
-175
-94
-368
-127
-travel?
-travel?
+286
+315
+554
+348
+activate-travel
+activate-travel
 0
 1
 -1000
 
 MONITOR
-659
+665
 474
-748
+754
 519
 Population L
 count turtles with [continent = 1]
@@ -701,9 +751,9 @@ count turtles with [continent = 1]
 11
 
 MONITOR
-836
+842
 474
-926
+932
 519
 Population R
 count turtles with [continent = 2]
@@ -716,7 +766,7 @@ PLOT
 138
 1398
 269
-Population L
+Population Left
 NIL
 # of people
 0.0
@@ -730,6 +780,145 @@ PENS
 "Infected_L" 1.0 0 -5298144 true "" "plot count turtles with [ infected? and continent = 1]"
 "Not_infected_L" 1.0 0 -14439633 true "" "plot count turtles with [ not infected? and continent = 1]"
 "Population_Tot_L" 1.0 0 -7500403 true "" "plot count turtles with [ continent = 1]"
+
+SLIDER
+12
+162
+281
+195
+incubation-rate
+incubation-rate
+0
+30
+7.0
+1
+1
+jours
+HORIZONTAL
+
+SLIDER
+13
+201
+281
+234
+worsening-rate
+worsening-rate
+0
+100
+15.0
+1
+1
+%
+HORIZONTAL
+
+PLOT
+1081
+522
+1398
+672
+R0
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot r0"
+
+SLIDER
+284
+276
+554
+309
+intra-mobility-right
+intra-mobility-right
+0
+1
+0.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+283
+511
+552
+544
+activate-quarantine-right
+activate-quarantine-right
+0
+1
+-1000
+
+SLIDER
+283
+547
+552
+580
+quarantine-rate-right
+quarantine-rate-right
+0
+1
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+233
+12
+336
+35
+SETTINGS
+20
+0.0
+1
+
+TEXTBOX
+13
+56
+163
+75
+General settings :
+15
+0.0
+1
+
+TEXTBOX
+13
+252
+248
+270
+Continents settings :
+15
+0.0
+1
+
+TEXTBOX
+15
+409
+178
+427
+Reinfection settings :
+15
+0.0
+1
+
+TEXTBOX
+17
+489
+183
+527
+Quarantine settings :
+15
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?

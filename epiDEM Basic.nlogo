@@ -154,7 +154,7 @@ to go
 
   ask turtles with [ infected? ]
     [
-      if activate-quarantine
+      if activate-quarantine-left or activate-quarantine-right
         [ quarantine ]
       infect
       death
@@ -185,7 +185,7 @@ to move  ;; turtle procedure
      ]
   ]
   [
-    if travel?
+    if activate-travel
     [
       if random 100 < (travel-tendency) ;; up to 1% chance of travel
       [ set xcor (- xcor) ]
@@ -212,7 +212,7 @@ to move  ;; turtle procedure
         ]
         rt angle
 
-        fd intra-mobility
+        fd intra-mobility-left
       ]
 
     ]
@@ -237,7 +237,7 @@ to move  ;; turtle procedure
         lt angle
 
 
-        fd intra-mobility
+        fd intra-mobility-right
       ]
     ]
   ]
@@ -250,12 +250,24 @@ to clear-count
 end
 
 to quarantine
-  if not quarantine? and random-float 1 < quarantine-rate
-  [  set quarantine? true
-     move-to patch-here ;; move to center of patch
-     set quarantine-length 0
-     ask (patch-at 0 0) [ set pcolor gray - 3 ]
+  ifelse continent = 1
+  [
+    if not quarantine? and random-float 1 < quarantine-rate-left and activate-quarantine-left
+    [ set quarantine? true
+      move-to patch-here ;; move to center of patch
+      set quarantine-length 0
+      ask (patch-at 0 0) [ set pcolor gray - 3 ]
+    ]
   ]
+  [
+    if not quarantine? and random-float 1 < quarantine-rate-right and activate-quarantine-right
+    [ set quarantine? true
+      move-to patch-here ;; move to center of patch
+      set quarantine-length 0
+      ask (patch-at 0 0) [ set pcolor gray - 3 ]
+    ]
+  ]
+
 end
 
 to incubation
@@ -424,10 +436,10 @@ jours
 30.0
 
 BUTTON
-173
-371
-256
-404
+736
+564
+819
+597
 setup
 setup
 NIL
@@ -441,10 +453,10 @@ NIL
 1
 
 BUTTON
-263
-371
-346
-404
+826
+564
+940
+610
 go
 go
 T
@@ -458,10 +470,10 @@ NIL
 0
 
 SLIDER
-0
-10
-269
-43
+11
+81
+280
+114
 initial-people
 initial-people
 50
@@ -477,7 +489,7 @@ PLOT
 269
 1398
 399
-Population R
+Population Right
 hours
 # of people
 0.0
@@ -512,10 +524,10 @@ PENS
 "Recovery Rate" 1.0 0 -10899396 true "" "plot (gamma * nb-infected-previous)"
 
 SLIDER
-1
-51
-269
-84
+12
+122
+280
+155
 infection-chance
 infection-chance
 10
@@ -527,10 +539,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-276
-10
-543
-43
+287
+81
+554
+114
 recovery-chance
 recovery-chance
 10
@@ -561,10 +573,10 @@ PENS
 "% recovered" 1.0 0 -10899396 true "" "plot ((count turtles with [ cured? ] / initial-people) * 100)"
 
 SLIDER
-275
-52
-544
-85
+286
+123
+555
+156
 average-recovery-time
 average-recovery-time
 50
@@ -587,10 +599,10 @@ r0
 11
 
 SLIDER
-0
-94
-172
-127
+13
+315
+279
+348
 travel-tendency
 travel-tendency
 0
@@ -602,25 +614,25 @@ NIL
 HORIZONTAL
 
 SLIDER
-0
-128
-172
-161
-intra-mobility
-intra-mobility
+13
+276
+279
+309
+intra-mobility-left
+intra-mobility-left
 0
 1
-0.8
+0.7
 0.1
 1
 NIL
 HORIZONTAL
 
 SWITCH
-175
-128
-368
-161
+13
+354
+279
+387
 TwoContinentInfected
 TwoContinentInfected
 0
@@ -628,10 +640,10 @@ TwoContinentInfected
 -1000
 
 SLIDER
-0
-196
-172
-229
+15
+433
+281
+466
 reinfection-chance
 reinfection-chance
 0
@@ -643,9 +655,9 @@ reinfection-chance
 HORIZONTAL
 
 SLIDER
-0
+287
 162
-172
+555
 195
 fatality-rate
 fatality-rate
@@ -669,12 +681,12 @@ count turtles
 11
 
 SLIDER
-0
-231
-172
-264
-quarantine-rate
-quarantine-rate
+17
+547
+280
+580
+quarantine-rate-left
+quarantine-rate-left
 0
 1
 0.11
@@ -684,13 +696,13 @@ NIL
 HORIZONTAL
 
 SWITCH
-174
-232
-367
-265
-activate-quarantine
-activate-quarantine
-0
+17
+511
+280
+544
+activate-quarantine-left
+activate-quarantine-left
+1
 1
 -1000
 
@@ -706,10 +718,10 @@ nb-reinfection
 11
 
 SWITCH
-174
-196
-367
-229
+285
+433
+553
+466
 activate-reinfection
 activate-reinfection
 0
@@ -717,12 +729,12 @@ activate-reinfection
 -1000
 
 SWITCH
-175
-94
-368
-127
-travel?
-travel?
+286
+315
+554
+348
+activate-travel
+activate-travel
 0
 1
 -1000
@@ -754,7 +766,7 @@ PLOT
 138
 1398
 269
-Population L
+Population Left
 NIL
 # of people
 0.0
@@ -770,10 +782,10 @@ PENS
 "Population_Tot_L" 1.0 0 -7500403 true "" "plot count turtles with [ continent = 1]"
 
 SLIDER
-13
-484
-185
-517
+12
+162
+281
+195
 incubation-rate
 incubation-rate
 0
@@ -785,10 +797,10 @@ jours
 HORIZONTAL
 
 SLIDER
-12
-545
-184
-578
+13
+201
+281
+234
 worsening-rate
 worsening-rate
 0
@@ -800,10 +812,10 @@ worsening-rate
 HORIZONTAL
 
 PLOT
-287
-431
-487
-581
+1081
+522
+1398
+672
 R0
 NIL
 NIL
@@ -816,6 +828,97 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot r0"
+
+SLIDER
+284
+276
+554
+309
+intra-mobility-right
+intra-mobility-right
+0
+1
+0.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SWITCH
+283
+511
+552
+544
+activate-quarantine-right
+activate-quarantine-right
+0
+1
+-1000
+
+SLIDER
+283
+547
+552
+580
+quarantine-rate-right
+quarantine-rate-right
+0
+1
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+TEXTBOX
+172
+10
+418
+33
+RÉGLAGE DES VARIABLES
+20
+0.0
+1
+
+TEXTBOX
+13
+56
+163
+75
+General settings :
+15
+0.0
+1
+
+TEXTBOX
+13
+252
+248
+270
+Continents settings :
+15
+0.0
+1
+
+TEXTBOX
+15
+409
+178
+427
+Reinfection settings :
+15
+0.0
+1
+
+TEXTBOX
+17
+489
+183
+527
+Quarantine settings :
+15
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
