@@ -15,12 +15,15 @@ globals
 
 turtles-own
 [
+  incubation?         ;; If true, the person is exposed
   infected?           ;; If true, the person is infected
   cured?              ;; If true, the person has lived through an infection.
   can-be-reinfected?  ;; They can be re-infected.
                       ;; They cannot be re-infected.
+  isFirstTime?        ;;
   quarantine?         ;; If true, the person is in quarantine
   susceptible?        ;; Tracks whether the person was initially susceptible
+  incubation-length   ;; How long the persone has been infected
   infection-length    ;; How long the person has been infected
   quarantine-length   ;; How long the person has been in quarantine
   recovery-time       ;; Time (in hours) it takes before the person has a chance to recover from the infection
@@ -63,9 +66,11 @@ to setup-people
 
     set cured? false
     set infected? false
+    set incubation? false
     set quarantine? false
     set susceptible? true
     set can-be-reinfected? false
+    set isFirstTime? true
 
     ifelse continent = 1
         [ set shape "square" ]
@@ -122,6 +127,8 @@ to assign-color  ;; turtle procedure
     [ set color red ]
   if cured?
     [ set color green ]
+  if incubation?
+    [ set color orange ]
 end
 
 
@@ -136,14 +143,25 @@ to go
 
   ask turtles
     [ move
-      if activate-quarantine
-        [ quarantine ]
-      clear-count ]
+      clear-count
+    ]
+
+  ask turtles with [ incubation? ]
+    [
+      incubation
+      infect
+    ]
 
   ask turtles with [ infected? ]
-    [ infect
+    [
+      if activate-quarantine
+        [ quarantine ]
+      infect
       death
       maybe-recover ]
+
+  ask turtles with [ cured? ]
+    [ loss-of-immunity ]
 
   ask turtles
     [ assign-color
@@ -160,11 +178,11 @@ to move  ;; turtle procedure
   ifelse quarantine?
   [  set quarantine-length quarantine-length + 1
      if susceptible? and quarantine-length > 7
-    [ set quarantine? false
-      set color white
-      ask (patch-at 0 0) [ set pcolor black ]
-      ask border [ set pcolor yellow ]           ;; patches on the border stay yellow
-    ]
+     [ set quarantine? false
+       set color white
+       ask (patch-at 0 0) [ set pcolor black ]
+       ask border [ set pcolor yellow ]           ;; patches on the border stay yellow
+     ]
   ]
   [
     if travel?
@@ -232,11 +250,22 @@ to clear-count
 end
 
 to quarantine
-  if not quarantine? and susceptible? and random-float 1 < quarantine-rate
+  if not quarantine? and random-float 1 < quarantine-rate
   [  set quarantine? true
      move-to patch-here ;; move to center of patch
      set quarantine-length 0
      ask (patch-at 0 0) [ set pcolor gray - 3 ]
+  ]
+end
+
+to incubation
+  ifelse incubation-length <= incubation-rate
+  [  set incubation-length incubation-length + 1]
+  [  set incubation-length 0
+     set incubation? false
+     ifelse random-float 100 < worsening-rate
+     [ set infected? true ]
+     [ set cured? true ]
   ]
 end
 
@@ -249,20 +278,10 @@ to infect  ;; turtle procedure
 
      if nearby-uninfected != nobody
      [ ask nearby-uninfected
-       [ ifelse cured?
-         [ if random-float 100 < reinfection-chance and activate-reinfection
-           [ set infected? false
-             set cured? false
-             set susceptible? true
-             set can-be-reinfected? true
-             set nb-recovered (nb-recovered - 1)
-             set infection-length 0
-             set color blue
-           ]
-         ]
+       [ if not cured?
          [
            if random-float 100 < infection-chance
-           [ set infected? true
+           [ set incubation? true
              set nb-infected (nb-infected + 1)
              if can-be-reinfected?
              [
@@ -273,6 +292,25 @@ to infect  ;; turtle procedure
        ]
      ]
   ]
+end
+
+;; si la perte immunitaire est possible, on lance 1 fois cette fonction
+;; il aura reinfection-chance % d'être à nouveau susceptible sinon on est immunisé jusqu'à la fin de la simulation
+to loss-of-immunity
+  if activate-reinfection and isFirstTime?
+  [
+    if random-float 100 < reinfection-chance
+    [ set infected? false
+      set cured? false
+      set susceptible? true
+      set can-be-reinfected? true
+      set nb-recovered (nb-recovered - 1)
+      set infection-length 0
+      set color blue
+    ]
+    set isFirstTime? false
+  ]
+
 end
 
 to maybe-recover
@@ -428,7 +466,7 @@ initial-people
 initial-people
 50
 400
-135.0
+200.0
 5
 1
 NIL
@@ -598,10 +636,10 @@ reinfection-chance
 reinfection-chance
 0
 100
-71.0
+33.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
@@ -652,7 +690,7 @@ SWITCH
 265
 activate-quarantine
 activate-quarantine
-1
+0
 1
 -1000
 
@@ -730,6 +768,36 @@ PENS
 "Infected_L" 1.0 0 -5298144 true "" "plot count turtles with [ infected? and continent = 1]"
 "Not_infected_L" 1.0 0 -14439633 true "" "plot count turtles with [ not infected? and continent = 1]"
 "Population_Tot_L" 1.0 0 -7500403 true "" "plot count turtles with [ continent = 1]"
+
+SLIDER
+13
+484
+185
+517
+incubation-rate
+incubation-rate
+0
+30
+7.0
+1
+1
+jours
+HORIZONTAL
+
+SLIDER
+12
+545
+184
+578
+worsening-rate
+worsening-rate
+0
+100
+15.0
+1
+1
+%
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
