@@ -188,7 +188,8 @@ to move  ;; turtle procedure
     if activate-travel
     [
       if random 100 < (travel-tendency) ;; up to 1% chance of travel
-      [ set xcor (- xcor) ]
+      [ set xcor (- xcor)
+      ]
     ]
 
     ifelse continent = 1
@@ -357,13 +358,13 @@ to calculate-r0
 
   ;; Number of infected people at the previous tick:
   set nb-infected-previous
-    count turtles with [ infected? ] +
+    count turtles with [ infected? or incubation? ] +
     new-recovered - new-infected
 
   ;; Number of susceptibles now:
   let susceptible-t
     initial-people -
-    count turtles with [ infected? ] -
+    count turtles with [ infected? or incubation? ] -
     count turtles with [ cured? ]
 
   let s0 0;
@@ -401,6 +402,8 @@ to calculate-r0
     ;; Since N >> 1
     ;; Using this, we have R_0 = beta*N / gamma = N*ln(S(0)/S(t)) / (K-S(t))
     set r0 r0 * s0 ]
+  if r0 < 0
+  [ set r0 0 ]
 end
 
 
@@ -436,10 +439,10 @@ jours
 30.0
 
 BUTTON
-736
+671
 564
-819
-597
+806
+622
 setup
 setup
 NIL
@@ -453,10 +456,10 @@ NIL
 1
 
 BUTTON
-826
+809
 564
-940
-610
+942
+622
 go
 go
 T
@@ -478,10 +481,10 @@ initial-people
 initial-people
 50
 400
-200.0
+400.0
 5
 1
-NIL
+nb peoples
 HORIZONTAL
 
 PLOT
@@ -490,7 +493,7 @@ PLOT
 1398
 399
 Population Right
-hours
+days
 # of people
 0.0
 10.0
@@ -510,7 +513,7 @@ PLOT
 1398
 520
 Infection and Recovery Rates
-hours
+days
 rate
 0.0
 0.2
@@ -535,7 +538,7 @@ infection-chance
 25.0
 5
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
@@ -547,10 +550,10 @@ recovery-chance
 recovery-chance
 10
 100
-10.0
+55.0
 5
 1
-NIL
+%
 HORIZONTAL
 
 PLOT
@@ -559,7 +562,7 @@ PLOT
 1398
 138
 Cumulative Infected and Recovered
-hours
+days
 % total pop
 0.0
 10.0
@@ -581,10 +584,10 @@ average-recovery-time
 average-recovery-time
 50
 300
-300.0
+130.0
 10
 1
-NIL
+days
 HORIZONTAL
 
 MONITOR
@@ -607,7 +610,7 @@ travel-tendency
 travel-tendency
 0
 1
-0.8
+0.5
 0.1
 1
 NIL
@@ -622,7 +625,7 @@ intra-mobility-left
 intra-mobility-left
 0
 1
-0.7
+0.5
 0.1
 1
 NIL
@@ -666,7 +669,7 @@ fatality-rate
 1.4
 0.1
 1
-NIL
+%
 HORIZONTAL
 
 MONITOR
@@ -689,7 +692,7 @@ quarantine-rate-left
 quarantine-rate-left
 0
 1
-0.11
+0.12
 0.01
 1
 NIL
@@ -724,7 +727,7 @@ SWITCH
 466
 activate-reinfection
 activate-reinfection
-0
+1
 1
 -1000
 
@@ -767,7 +770,7 @@ PLOT
 1398
 269
 Population Left
-NIL
+days
 # of people
 0.0
 10.0
@@ -793,7 +796,7 @@ incubation-rate
 7.0
 1
 1
-jours
+days
 HORIZONTAL
 
 SLIDER
@@ -805,24 +808,24 @@ worsening-rate
 worsening-rate
 0
 100
-15.0
+50.0
 1
 1
 %
 HORIZONTAL
 
 PLOT
-1081
-522
+1079
+521
 1398
-672
+659
 R0
-NIL
+days
 NIL
 0.0
 10.0
 0.0
-10.0
+5.0
 true
 false
 "" ""
@@ -838,7 +841,7 @@ intra-mobility-right
 intra-mobility-right
 0
 1
-0.0
+0.5
 0.1
 1
 NIL
@@ -851,7 +854,7 @@ SWITCH
 544
 activate-quarantine-right
 activate-quarantine-right
-0
+1
 1
 -1000
 
@@ -864,8 +867,8 @@ quarantine-rate-right
 quarantine-rate-right
 0
 1
-1.0
-0.1
+0.3
+0.01
 1
 NIL
 HORIZONTAL
@@ -875,7 +878,7 @@ TEXTBOX
 10
 418
 33
-RÉGLAGE DES VARIABLES
+SETTING VARIABLE
 20
 0.0
 1
